@@ -45,8 +45,8 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
     24+rnd*22 vs 45+rnd*40). Palette gains c/e/s; WEAPON_GLOW tints
     pickup glows.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
-- Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
-- Other QA scripts in scripts/: visual-qa.mjs (25 checks incl. all weapon
+- Headless regression: `node scripts/combat-checks.mjs` (17 checks). Green.
+- Other QA scripts in scripts/: visual-qa.mjs (27 checks incl. all weapon
   pickups, carry poses and stun/shockwave FX shots), e2e.mjs, smoke.ts
   (Puppeteer; use `PUPPETEER_SKIP_DOWNLOAD=true` when installing;
   puppeteer's pinned Chrome is NOT downloaded — run with
