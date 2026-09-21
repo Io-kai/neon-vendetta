@@ -145,4 +145,12 @@ check('fist combo still chains jab into cross', () => {
   for (let i = 0; i < 10; i++) { p.step(); p.control(neutral, bounds); }
   assert.equal(p.atkSeq[0].frame, 'crossWindup'); assert.equal(p.comboStage, 2);
 });
+check('bosses escalate in toughness down the campaign', () => {
+  const { ENEMY_TYPES } = load('Enemy');
+  assert.ok(ENEMY_TYPES.korvo.hp >= 400, `korvo hp ${ENEMY_TYPES.korvo.hp}`);
+  assert.ok(ENEMY_TYPES.sable.hp > ENEMY_TYPES.korvo.hp, 'sable above korvo');
+  assert.ok(ENEMY_TYPES.cinder.hp > ENEMY_TYPES.sable.hp, 'cinder above sable');
+  assert.ok(ENEMY_TYPES.orison.hp > ENEMY_TYPES.cinder.hp, 'orison above cinder');
+  assert.ok(ENEMY_TYPES.sable.dmg >= 16 && ENEMY_TYPES.cinder.dmg >= 24, 'mid bosses hit harder');
+});
 console.log(`${checks} combat regression checks passed.`);

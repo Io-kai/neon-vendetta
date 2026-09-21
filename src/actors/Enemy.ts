@@ -23,13 +23,13 @@ export const ENEMY_TYPES: Record<string, EnemyType> = {
   razor:{id:'razor',hp:48,walk:1.85,lane:1.25,dmg:8,reach:34,score:180,knifeVisual:true},
   husk:{id:'husk',hp:115,walk:.8,lane:.6,dmg:14,reach:39,score:330,armor:.2,chargeAttack:true},
   sentinel:{id:'sentinel',hp:72,walk:1.35,lane:1.05,dmg:11,reach:38,score:240,armor:.15},
-  sable:{id:'sable',hp:360,walk:1.95,lane:1.5,dmg:12,reach:42,score:3000,boss:true,pattern:'duelist'},
-  cinder:{id:'cinder',hp:470,walk:.9,lane:.7,dmg:20,reach:46,score:4000,boss:true,pattern:'quake',chargeAttack:true,armor:.2},
-  orison:{id:'orison',hp:520,walk:1.35,lane:1.05,dmg:17,reach:45,score:6000,boss:true,pattern:'pulse',chargeAttack:true,armor:.15},
+  sable:{id:'sable',hp:540,walk:2.05,lane:1.6,dmg:16,reach:42,score:3000,boss:true,pattern:'duelist'},
+  cinder:{id:'cinder',hp:660,walk:.95,lane:.75,dmg:24,reach:46,score:4000,boss:true,pattern:'quake',chargeAttack:true,armor:.3},
+  orison:{id:'orison',hp:720,walk:1.4,lane:1.1,dmg:22,reach:45,score:6000,boss:true,pattern:'pulse',chargeAttack:true,armor:.25},
   punk:  { id: 'punk',  hp: 32,  walk: 1.05, lane: 0.8,  dmg: 6,  reach: 26, score: 100 },
   blade: { id: 'blade', hp: 44,  walk: 1.5,  lane: 1.1,  dmg: 8,  reach: 36, score: 150, knifeVisual: true },
   brute: { id: 'brute', hp: 100, walk: 0.85, lane: 0.62, dmg: 14, reach: 36, score: 300, armor: 0.45, chargeAttack: true },
-  korvo: { id: 'korvo', hp: 340, walk: 1.25, lane: 0.95, dmg: 18, reach: 42, score: 2000, armor: 0.3, chargeAttack: true, boss: true },
+  korvo: { id: 'korvo', hp: 400, walk: 1.25, lane: 0.95, dmg: 20, reach: 42, score: 2000, armor: 0.3, chargeAttack: true, boss: true },
 };
 
 export interface AiContext {
@@ -110,7 +110,9 @@ export class Enemy extends Fighter {
     if (this.hasToken && !this.busy && this.state !== 'jump') {
       ctx.endAttack(this);
       this.hasToken = false;
-      this.cooldown = Math.round((45 + Math.random() * 40) / Math.max(0.4, ctx.aggro));
+      // bosses recover and press again far faster than grunts
+      const baseCd = this.type.boss ? 24 + Math.random() * 22 : 45 + Math.random() * 40;
+      this.cooldown = Math.round(baseCd / Math.max(0.4, ctx.aggro));
       this.mode = 'reposition';
       this.repoT = 24 + Math.random() * 24;
       if (ctx.target) {

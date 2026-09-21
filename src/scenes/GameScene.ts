@@ -601,18 +601,23 @@ export class GameScene extends Phaser.Scene {
 
   private onGroundAttack(p: Player): void {
     if (this.introT > 0 || this.cleared || this.paused) return;
-    if (p.weapon) { p.swingWeapon(); return; }
-    // pick up a nearby weapon
+    // pick up a nearby weapon; already armed, this swaps — the old weapon
+    // drops behind you with its remaining durability
     for (const it of this.items) {
       if (it.taken || !WEAPON_DEFS[it.def.kind]) continue;
       if (Math.abs(it.fx - p.fx) < 20 && Math.abs(it.fy - p.fy) < 10) {
+        if (p.weapon) {
+          const dx = Phaser.Math.Clamp(p.fx - p.facing * 24, p.minX, p.maxX);
+          this.items.push(new Item(this, p.weapon.type, dx, p.fy, p.weapon.uses));
+        }
         it.taken = true;
-        p.weapon = { type: it.def.kind, uses: it.def.uses ?? 5 };
+        p.weapon = { type: it.def.kind, uses: it.usesLeft ?? it.def.uses ?? 5 };
         it.destroy();
         Jukebox.sfx(this, 'pickup');
         return;
       }
     }
+    if (p.weapon) { p.swingWeapon(); return; }
     if (p.tryGrab(this.enemies)) return;
     p.beginCombo();
   }

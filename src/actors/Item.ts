@@ -70,12 +70,15 @@ export class Item {
   fx: number;
   fy: number;
   taken = false;
+  /** Remaining durability when re-dropped from a player's hand. */
+  usesLeft?: number;
   private bobT: number;
   private glow: Phaser.GameObjects.Ellipse;
   private glint: Phaser.GameObjects.Star;
 
-  constructor(scene: Phaser.Scene, kind: ItemKind, x: number, y: number) {
+  constructor(scene: Phaser.Scene, kind: ItemKind, x: number, y: number, usesLeft?: number) {
     this.def = ITEM_DEFS[kind];
+    this.usesLeft = usesLeft;
     this.fx = x;
     this.fy = y;
     this.bobT = Math.random() * 60;

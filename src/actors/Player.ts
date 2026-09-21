@@ -411,11 +411,21 @@ export class Player extends Fighter {
         const e = t * t * (3 - 2 * t);
         ang = follow + (carry - follow) * e;
       }
-      this.weaponImg.setOrigin(def?.grip ?? 0.2, 0.5);
       this.weaponImg.setPosition(this.fx + this.facing * (fist[0] - 36) * artScale,
         (this.fy - this.fz) - (56 - fist[1]) * artScale);
-      this.weaponImg.setAngle(this.facing > 0 ? ang : 180 - ang);
-      this.weaponImg.setFlipX(this.facing < 0);
+      // Mirrored carry for facing left: flip the art AND the origin so the
+      // grip pixel stays on the fist; angle negates so the blade keeps its
+      // edge orientation instead of reversing.
+      const grip = def?.grip ?? 0.2;
+      if (this.facing > 0) {
+        this.weaponImg.setOrigin(grip, 0.5);
+        this.weaponImg.setFlipX(false);
+        this.weaponImg.setAngle(ang);
+      } else {
+        this.weaponImg.setOrigin(1 - grip, 0.5);
+        this.weaponImg.setFlipX(true);
+        this.weaponImg.setAngle(-ang);
+      }
       this.weaponImg.setDepth(this.fy + 1);
       // 'down' frames are canvas-rotated; the weapon reads as let go.
       const dropped = this.dead || this.state === 'down' || this.state === 'launched'

@@ -35,11 +35,15 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
     (exported from src/art/fighters.ts — the SAME pure math the frame
     renderer uses; renderFighter consumes it, so art and logic cannot
     drift) and sweeps the angle through the arc choreography (carry →
-    cocked raise → snap sweep → settle). Weapon hidden on down/launched/
-    thrown/grabbed (canvas-rotated frames). Smear trails in stepFx.
-    Earlier iterations anchored at fixed hip offsets and read terribly —
-    the fist is ~30px higher than the hip, which was the whole problem.
-    Palette gains c/e/s; WEAPON_GLOW tints pickup glows.
+    cocked raise → snap sweep → settle). Facing left mirrors with
+    flipX + origin(1-grip) + negated angle (blade edge orientation
+    preserved). Weapon hidden on down/launched/thrown/grabbed. **Weapon
+    swap**: attacking near another weapon while armed drops the old one
+    behind you with its remaining uses (Item.usesLeft). Smear trails in
+    stepFx. Bosses buffed 2026-09-21 (korvo 400, sable 540, cinder 660,
+    orison 720 hp; higher dmg; ~2x attack rate via boss cooldown
+    24+rnd*22 vs 45+rnd*40). Palette gains c/e/s; WEAPON_GLOW tints
+    pickup glows.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
 - Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
 - Other QA scripts in scripts/: visual-qa.mjs (25 checks incl. all weapon

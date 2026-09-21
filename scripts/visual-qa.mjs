@@ -223,6 +223,39 @@ try {
   }
  }
 
+ // ---- weapon swap: picking up a new weapon discards the old one ----
+ await page.evaluate(()=>{window.__NV_GAME__.scene.getScene('GameScene').scene.restart({stageIndex:0,players:1});});
+ await page.waitForFunction(()=>{
+  const s=window.__NV_GAME__.scene.getScene('GameScene');
+  return window.__NV_GAME__.scene.isActive('GameScene')&&s.players?.length===1&&s.items?.some(i=>i.def.kind==='knife');
+ });
+ await sleep(400);await press('Escape');
+ await page.waitForFunction(()=>!window.__NV_GAME__.scene.getScene('GameScene').storyUi.active);
+ const swapped=await page.evaluate(()=>{
+  const s=window.__NV_GAME__.scene.getScene('GameScene');
+  const p=s.players[0];
+  const it=s.items.find(i=>i.def.kind==='knife'&&!i.taken);
+  p.weapon={type:'pipe',uses:2};
+  p.fx=it.fx;p.fy=it.fy;p.minX=0;p.maxX=9999;p.facing=1;p.setState('idle');
+  s.paused=false;s.introT=0;
+  s.onGroundAttack(p);
+  s.paused=true;
+  const dropped=s.items.find(i=>i.def.kind==='pipe'&&!i.taken&&Math.abs(i.fx-p.fx)<40);
+  return {now:p.weapon?.type??null,dropped:!!dropped,uses:dropped?.usesLeft??null};
+ });
+ check(swapped.now==='knife'&&swapped.dropped&&swapped.uses===2,'weapon swap equips new weapon, drops old with remaining uses');
+
+ // ---- mirrored carry: facing left flips art and origin, keeps blade edge ----
+ const mirror=await page.evaluate(()=>{
+  const s=window.__NV_GAME__.scene.getScene('GameScene');
+  const p=s.players[0];
+  p.facing=-1;p.setState('idle');p.step();p.syncWeaponSprite();
+  const w=p.weaponImg;
+  return {flipX:w?.flipX===true,originX:Math.round((w?.originX??0)*100)/100,angle:Math.round(w?.angle??0)};
+ });
+ check(mirror.flipX&&Math.abs(mirror.originX-0.8)<0.01,`facing left mirrors grip origin (${mirror.originX}) and flips art`);
+ await sleep(150);await page.screenshot({path:out+'premium-mirror-left.png'});
+
  check(errors.length===0,'no runtime exceptions: '+errors.join('; '));
  writeFileSync(out+'visual-checks.json',JSON.stringify(checks,null,2));
 } finally { await browser.close(); }
