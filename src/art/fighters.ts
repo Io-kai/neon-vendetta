@@ -56,6 +56,42 @@ function segment(c:CanvasRenderingContext2D,a:Point,b:Point,ra:number,rb:number,
 }
 const ATTACKS=['jab','cross','uppercut','kick','grab','swing','rising','lariat','slam','charge'];
 
+/** Per-frame arm anchors in texture-logical coordinates (72x56 canvas).
+ *  Pure geometry — no canvas, no Phaser. Player.syncWeaponSprite pins the
+ *  held weapon grip to `fist` and renders to the same math used below, so
+ *  renderFighter and the game logic can never drift apart. */
+export interface ArmAnchors { shoulder:Point; elbow:Point; fist:Point; rearShoulder:Point; rearElbow:Point; rearFist:Point }
+export function fighterArmGeometry(id:string,frame:string):ArmAnchors{
+ const w=SUITS[id].width;
+ const walkMatch=frame.match(/^walk(\d+)$/),idleMatch=frame.match(/^idle(\d+)$/);
+ const walking=!!walkMatch||frame==='walkA'||frame==='walkB';
+ const phase=walkMatch?Number(walkMatch[1])/12*Math.PI*2:frame==='walkB'?Math.PI:0;
+ const breath=idleMatch?Math.sin(Number(idleMatch[1])/6*Math.PI*2):frame==='idle2'?1:0;
+ const windup=frame.endsWith('Windup'),recover=frame.endsWith('Recover');
+ const action=frame.replace(/Windup$|Recover$/,'');
+ const strike=ATTACKS.includes(action),amount=windup?-.3:recover?.25:1;
+ const hurt=action==='hurt';
+ const bob=walking?-Math.abs(Math.sin(phase))*.8:breath*.35;
+ const x=35+(hurt?-3:strike?amount*1.3:0),ground=53;
+ const hip=ground-20+bob,top=hip-13-SUITS[id].height;
+ const lean=hurt?-3:action==='charge'?5:strike?amount*2:walking?1:0;
+ const tx=x+lean;
+ const rearShoulder:Point=[tx-(walking?1.4:5.3+w),top+2.5],shoulder:Point=[tx+(walking?1.1:4.2+w),top+2.9];
+ let re:Point=[tx-7.4-w,top+8],rf:Point=[tx-4.5,top+6];
+ let elbow:Point=[tx+7+w,top+8],fist:Point=[tx+9+w,top+3.5];
+ if(walking){
+   const gait=fighterWalkGeometry(id,phase,x,hip,ground,top,tx);
+   re=gait.rearElbow;rf=gait.rearFist;elbow=gait.elbow;fist=gait.fist;
+ }
+ if(strike){elbow=[tx+8+amount*4,top+5-amount*2];fist=[tx+10+amount*(action==='cross'?14:11),top+5-amount*3];re=[tx-7,top+7];rf=[tx-1,top+4];}
+ if(action==='uppercut'||action==='rising'){elbow=[tx+8,top+5-amount*4];fist=[tx+7+amount*2,top+4-amount*11];}
+ if(action==='kick'){elbow=[tx+5,top+7];fist=[tx+1,top+3];re=[tx-8,top+6];rf=[tx-10,top+4];}
+ if(action==='lariat'){re=[tx-11*amount,top+4];rf=[tx-21*amount,top+4];elbow=[tx+10*amount,top+3];fist=[tx+22*amount,top+3];}
+ if(action==='slam'){elbow=[tx+7,top+5+amount*4];fist=[tx+5,top+4+amount*10];}
+ if(hurt){elbow=[tx+7,top+9];fist=[tx+11,top+11];re=[tx-9,top+5];rf=[tx-12,top+2];}
+ return{shoulder,elbow,fist,rearShoulder,rearElbow:re,rearFist:rf};
+}
+
 /** Shared render geometry, exported so capture QA can verify arm/leg counter-swing. */
 export function fighterWalkGeometry(id:string,phase:number,x=35,hip=33,ground=53,top=20,tx=36){
  const stride=44/(4*CHAR_ART[id].scale);
@@ -131,20 +167,7 @@ function renderFighter(c:CanvasRenderingContext2D,id:string,frame:string){
   glow(c,[[x-7,hip-1],[x-8+flutter,hip+8],[x-5+flutter,hip+10]],p.neon,.5);
  }
  leg(frontHip,frontKnee,frontFoot,false);
- const rearShoulder:Point=[tx-(walking?1.4:5.3+w),top+2.5],shoulder:Point=[tx+(walking?1.1:4.2+w),top+2.9];
- let re:Point=[tx-7.4-w,top+8],rf:Point=[tx-4.5,top+6];
- let elbow:Point=[tx+7+w,top+8],fist:Point=[tx+9+w,top+3.5];
- if(walking){
-   // Both arms counter the corresponding foot displacement around profile pivots.
-   const gait=fighterWalkGeometry(id,phase,x,hip,ground,top,tx);
-   re=gait.rearElbow;rf=gait.rearFist;elbow=gait.elbow;fist=gait.fist;
- }
- if(strike){elbow=[tx+8+amount*4,top+5-amount*2];fist=[tx+10+amount*(action==='cross'?14:11),top+5-amount*3];re=[tx-7,top+7];rf=[tx-1,top+4];}
- if(action==='uppercut'||action==='rising'){elbow=[tx+8,top+5-amount*4];fist=[tx+7+amount*2,top+4-amount*11];}
- if(action==='kick'){elbow=[tx+5,top+7];fist=[tx+1,top+3];re=[tx-8,top+6];rf=[tx-10,top+4];}
- if(action==='lariat'){re=[tx-11*amount,top+4];rf=[tx-21*amount,top+4];elbow=[tx+10*amount,top+3];fist=[tx+22*amount,top+3];}
- if(action==='slam'){elbow=[tx+7,top+5+amount*4];fist=[tx+5,top+4+amount*10];}
- if(hurt){elbow=[tx+7,top+9];fist=[tx+11,top+11];re=[tx-9,top+5];rf=[tx-12,top+2];}
+ const{shoulder,rearShoulder,rearElbow:re,rearFist:rf,elbow,fist}=fighterArmGeometry(id,frame);
  const arm=(a:Point,b:Point,f:Point,rear:boolean)=>{
    segment(c,a,b,1.9+w*.3,1.35+w*.2,p,rear);ellipse(c,b[0],b[1],1.4+w*.2,1.5,INK);
    ellipse(c,b[0]-.3,b[1],.8,.8,rear?p.alloy:p.light);

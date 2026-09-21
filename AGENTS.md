@@ -29,14 +29,16 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
     crescent arc FX (`slash`, move 2.6). Stage 2 + 4.
   - "FOUNDATION" hydraulic sledge: impact detonates a radial ground
     **shockwave** (`shockwave`, GameScene.shockwave()). Stage 3.
-  - WEAPON_DEFS also carries per-weapon held-sprite geometry (grip,
-    idle/swing offsets + angles) and an `arc` style (swing/smash/stab).
-    `Player.syncWeaponSprite()` ANIMATES the weapon: carry (tip-up at
-    the side, ≈ -80°) → cocked windup raise (ARC_RAISE per style) →
-    fast-snap arc sweep (pow(t,0.42) easing) → settle recover. Sledge
-    rests head-down (68°) and smashes to ground level. Weapon smear
-    trails render in GameScene.stepFx during active poses. All 7 weapon
-    pixel maps were redrawn larger with shaded detail 2026-09-21.
+  - WEAPON_DEFS also carries per-weapon grip/angles and an `arc` style
+    (swing/smash/stab). `Player.syncWeaponSprite()` pins the grip to the
+    hero's LIVE FIST every frame via `fighterArmGeometry(id, frame)`
+    (exported from src/art/fighters.ts — the SAME pure math the frame
+    renderer uses; renderFighter consumes it, so art and logic cannot
+    drift) and sweeps the angle through the arc choreography (carry →
+    cocked raise → snap sweep → settle). Weapon hidden on down/launched/
+    thrown/grabbed (canvas-rotated frames). Smear trails in stepFx.
+    Earlier iterations anchored at fixed hip offsets and read terribly —
+    the fist is ~30px higher than the hip, which was the whole problem.
     Palette gains c/e/s; WEAPON_GLOW tints pickup glows.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
 - Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
