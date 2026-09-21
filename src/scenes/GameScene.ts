@@ -409,6 +409,16 @@ export class GameScene extends Phaser.Scene {
             .setFlipX(fighter.facing < 0).setTint(color).setAlpha(0.23)
             .setBlendMode(Phaser.BlendModes.ADD).setDepth(fighter.fy - 0.2);
           this.fx.push({ img, t: 0, kind: 'trail' });
+          // the weapon itself leaves a smear along its arc — this is what
+          // makes a swing read as motion instead of a pose swap
+          const wi = fighter.weaponImg;
+          if (wi?.visible) {
+            const wimg = this.add.image(wi.x, wi.y, wi.texture.key)
+              .setOrigin(wi.originX, wi.originY).setScale(wi.scaleX, wi.scaleY)
+              .setAngle(wi.angle).setFlipX(wi.flipX).setTint(color).setAlpha(0.34)
+              .setBlendMode(Phaser.BlendModes.ADD).setDepth(fighter.fy + 0.9);
+            this.fx.push({ img: wimg, t: 0, kind: 'trail' });
+          }
           }
         }
       }

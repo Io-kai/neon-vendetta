@@ -33,17 +33,19 @@ export interface WeaponDef {
   slash?: number;       // crescent slash-arc FX radius (mono-edge)
   shockwave?: number;   // radial ground shockwave on first connect (sledge)
   move?: number;        // forward drift per tick while live (default 1.4)
+  arc?: 'swing' | 'smash' | 'stab'; // swing animation path (default 'swing')
   // held-sprite geometry (defaults noted in Player.syncWeaponSprite)
   grip?: number;        // sprite origin X — the hand holds it here
   idleAngle?: number;   // carry angle, tip-up negative (degrees, facing right)
-  swingAngle?: number;  // mid-swing angle
+  swingAngle?: number;  // follow-through angle at the end of the arc
   idleX?: number; idleY?: number;
   swingX?: number; swingY?: number;
 }
 
 export const WEAPON_DEFS: Partial<Record<ItemKind, WeaponDef>> = {
   pipe:   { dmg: 15, reach: 48, width: 30, launch: true,  heavy: true,  windup: 6, swing: 6, recover: 8 },
-  knife:  { dmg: 11, reach: 40, width: 26, launch: false, heavy: false, windup: 4, swing: 5, recover: 6, idleAngle: -70 },
+  knife:  { dmg: 11, reach: 40, width: 26, launch: false, heavy: false, windup: 4, swing: 5, recover: 6,
+            arc: 'stab', idleAngle: -70, swingX: 30, swingY: 33, swingAngle: 0 },
   bat:    { dmg: 13, reach: 56, width: 32, launch: false, heavy: true,  windup: 7, swing: 7, recover: 9 },
   katana: { dmg: 22, reach: 46, width: 28, launch: true,  heavy: true,  windup: 5, swing: 6, recover: 8, swingAngle: -6 },
   // STREETLIGHT stun baton — arc hits paralyze survivors upright.
@@ -52,9 +54,9 @@ export const WEAPON_DEFS: Partial<Record<ItemKind, WeaponDef>> = {
   // YELLOWLINE mono-edge — dash-through slashes that launch.
   monoedge:{ dmg: 16, reach: 50, width: 28, launch: true, heavy: true,  windup: 4, swing: 6, recover: 7,
             slash: 34, move: 2.6, grip: 0.13, swingX: 30, swingY: 36, swingAngle: -6 },
-  // FOUNDATION hydraulic sledge — impact detonates a ground shockwave.
+  // FOUNDATION hydraulic sledge — overhead smash; impact detonates a shockwave.
   sledge: { dmg: 24, reach: 42, width: 34, launch: true,  heavy: true,  windup: 9, swing: 8, recover: 12,
-            shockwave: 72, grip: 0.1, idleAngle: 68, idleX: 12, idleY: 34, swingX: 26, swingY: 40, swingAngle: 15 },
+            shockwave: 72, arc: 'smash', grip: 0.1, idleAngle: 68, idleX: 12, idleY: 34, swingX: 24, swingY: 12, swingAngle: 72 },
 };
 
 /** Glow color per weapon kind (falls back to the generic weapon blue). */

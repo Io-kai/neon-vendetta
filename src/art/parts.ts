@@ -437,67 +437,84 @@ export const CHAR_ART: Record<string, CharArtDef> = {
 // ---------------------------------------------------------------------------
 
 export const ITEM_MAPS: Record<string, PixMap> = {
+  // Steel pipe: bright crown highlight, mid body, shadowed belly, open mouth.
   pipe: [
-    '..oooooooooo..',
-    '.ommmmmmmmmmo.',
-    'ommmmmmmmmmmmo',
-    '.ommmmmmmmmmo.',
-    '..oooooooooo..',
+    '..oooooooooooooooo....',
+    '.omwwwwwwwwwwwwwwsoo..',
+    'ommmmmmmmmmmmmmmmmosmo',
+    '.osssssssssssssssssoo.',
+    '..oooooooooooooooo....',
   ],
+  // Street knife: pommel, wrapped grip, guard, bright-edge blade with fuller.
   knife: [
-    '.....ooo.',
-    'ommmmmmmo',
-    'obbbo....',
-    '.........',
+    '.......ooooooooo...',
+    '......omwwwwwwwwo..',
+    '..oooommmmmmmmmmo..',
+    '.osbbooosssssssso..',
+    '..obbo.............',
+    '...bb..............',
   ],
+  // Wooden bat: thin taped handle swelling into a heavy barrel, pale grain
+  // highlight along the crown, warm brown body beneath.
   bat: [
-    '..oooooooooo...',
-    '.onnnnnNNNNNNo.',
-    'onnnnnNNNNNNNNo',
-    '.onnnnnNNNNNNo.',
-    '..oooooooooo...',
+    '..........ooooooooooo...',
+    '.........onNNNNNNNNNNNo..',
+    '.oooooooonNnnnnnnnnnnNNo',
+    'onnnnnnnoNnnnnnnnnnnnnNo',
+    'onnnnnnnoNnnnnnnnnnnnnNo',
+    '.oooooooonnnnnnnnnnnnNo.',
+    '.........onnnnnnnnnnno..',
+    '..........ooooooooooo...',
   ],
+  // Katana: dark wrapped tsuka, bright 2-row blade with a full white hamon
+  // edge and polished tip glint.
   katana: [
-    '.....ooooooooo',
-    '.ommmmmmmmmwo.',
-    '.owwwwwwwwwo..',
-    'obbboooooooo..',
-    '..............',
+    '........ooooooooooooooooo.',
+    '.......ommmmmmmmmmmmmmmmwo',
+    '..ooooowwwwwwwwwwwwwwwwwwo',
+    '.osbbso...................',
+    '..sbbs....................',
+    '...bbb....................',
+    '....oo....................',
   ],
-  // "STREETLIGHT" stun baton: dark riot grip, steel shaft, twin emitter
-  // rings and a crackling blue-white tip.
+  // "STREETLIGHT" stun baton: ribbed riot grip, banded steel shaft, twin
+  // emitter rings and a fat crackling blue-white electrode.
   baton: [
-    '.............oo.....',
-    '..oooooooooooeewwo..',
-    '.obbbbsmmmmceewweco.',
-    '.obbsbsmmsmeewweco..',
-    '..oooooooooooeewwo..',
-    '.............oo.....',
+    '..................owwo.....',
+    '..ooooooooooooooocccco....',
+    '.obbbbbbbmmmmmmmeewwwweo..',
+    'obsbsbsbmmmmmmccewwwwwceo.',
+    '.obbbbbbbmmmmmmmeewwwweo..',
+    '..ooooooooooooooocccco....',
+    '..................owwo.....',
   ],
   // "YELLOWLINE" mono-edge: courier-yellow wrapped grip, guard, long steel
-  // spine with a glowing cyan monomolecular cutting edge.
+  // spine over a glowing cyan monomolecular edge.
   monoedge: [
-    '........oooooooooooooo.',
-    '..ooooommmmmmmmmmmmwwoc',
-    '.obybyboocccccccccccewo',
-    '..obyboo...............',
-    '...bbbb................',
-    '....ooo................',
+    '..........oooooooooooooooooo..',
+    '..ooooooommmmmmmmmmmmmmmmmwoc.',
+    '.oybybyboccccccccccccccccccewo',
+    '..ooooooo......................',
+    '...bbbbb.......................',
+    '....oooo.......................',
   ],
-  // "FOUNDATION" hydraulic sledge: steel haft, massive block head with
-  // hazard stripes and a dark hydraulic piston band.
+  // "FOUNDATION" hydraulic sledge: banded steel haft, massive block head
+  // with hazard chevrons and a dark hydraulic piston band.
   sledge: [
-    '........ooooooooooo..',
-    '........ommmmmmmmmo..',
-    '........omyysyysmmo..',
-    '........ommmmmmmmmo..',
-    '..ooooooossssssssso..',
-    '.ommmmmsmmmmmmmmmmo..',
-    '..ooooooossssssssso..',
-    '........ommmmmmmmmo..',
-    '........omyysyysmmo..',
-    '........ommmmmmmmmo..',
-    '........ooooooooooo..',
+    '...........oooooooooooo...',
+    '..........ommmmmmmmmmmmo..',
+    '..........ommyyyyyyymmmo..',
+    '..........ommmmmmmmmmmmo..',
+    '..........omssssssssssmo..',
+    '..oooooooomsmmmmmmmmmsmo..',
+    '.ommmmmmmommmmmmmmmmmmmo..',
+    '.ommmmmmmommmmmmmmmmmmmo..',
+    '..oooooooomsmmmmmmmmmsmo..',
+    '..........omssssssssssmo..',
+    '..........ommmmmmmmmmmmo..',
+    '..........ommyyyyyyymmmo..',
+    '..........ommmmmmmmmmmmo..',
+    '...........oooooooooooo...',
   ],
   ramen: [
     '..w..w......',

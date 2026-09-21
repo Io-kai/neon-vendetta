@@ -49,6 +49,14 @@ export interface PadState {
   attackPr: boolean; jumpPr: boolean; specialPr: boolean;
 }
 
+/** Cocked windup pose per swing-arc style (facing right; offsets from the
+ *  fighter origin, y measured upward from the feet). */
+const ARC_RAISE: Record<string, { x: number; y: number; a: number }> = {
+  swing: { x: -8, y: 46, a: -150 },  // raised back over the shoulder
+  smash: { x: -4, y: 54, a: -165 },  // hoisted high overhead
+  stab:  { x: -6, y: 30, a: 25 },    // pulled back at the hip, tip forward
+};
+
 export class Player extends Fighter {
   slot: 0 | 1;
   stats: CharStats;
@@ -363,9 +371,10 @@ export class Player extends Fighter {
   }
 
   /** Update the attached weapon sprite (called each tick by GameScene).
-   *  Carry: held close at the side, tip up — never jutting from the hip.
-   *  Swing: extended along the striking arm. Per-weapon geometry comes
-   *  from WEAPON_DEFS; defaults fit the stick/blade weapons. */
+   *  The weapon is animated through a real swing: it rises into a cocked
+   *  windup pose, snaps through an arc during the active frames, then
+   *  settles back to the carry pose through recovery. Carry is tip-up at
+   *  the side. Per-weapon geometry/arc style comes from WEAPON_DEFS. */
   syncWeaponSprite(): void {
     if (this.weapon) {
       const def = WEAPON_DEFS[this.weapon.type];
@@ -375,13 +384,36 @@ export class Player extends Fighter {
         this.weaponImg = this.scene.add.image(this.fx, this.fy, texture);
         this.weaponImg.setScale(2);
       }
-      const swinging = (this.state === 'attack' || this.state === 'special') && this.atkIdx > 0;
-      const hx = this.fx + this.facing * (swinging ? (def?.swingX ?? 30) : (def?.idleX ?? 9));
-      const hy = this.fy - this.fz - (swinging ? (def?.swingY ?? 40) : (def?.idleY ?? 32));
-      const a = swinging ? (def?.swingAngle ?? 12) : (def?.idleAngle ?? -80);
+      const carry = { x: def?.idleX ?? 9, y: def?.idleY ?? 32, a: def?.idleAngle ?? -80 };
+      const raise = ARC_RAISE[def?.arc ?? 'swing'];
+      const follow = { x: def?.swingX ?? 30, y: def?.swingY ?? 40, a: def?.swingAngle ?? 12 };
+      const attacking = (this.state === 'attack' || this.state === 'special') && this.atkSeq.length > 0;
+      let px = carry.x, py = carry.y, ang = carry.a;
+      if (attacking && this.atkIdx === 0) {
+        // windup: ease from carry into the cocked raise pose
+        const t = Math.min(1, this.atkT / Math.max(1, this.atkSeq[0].dur));
+        const e = t * t * (3 - 2 * t);
+        px = carry.x + (raise.x - carry.x) * e;
+        py = carry.y + (raise.y - carry.y) * e;
+        ang = carry.a + (raise.a - carry.a) * e;
+      } else if (attacking && this.atkIdx === 1) {
+        // active: snap through the arc (fast-out easing reads as a strike)
+        const t = Math.min(1, this.atkT / Math.max(1, this.atkSeq[1].dur));
+        const e = Math.pow(t, 0.42);
+        px = raise.x + (follow.x - raise.x) * e;
+        py = raise.y + (follow.y - raise.y) * e;
+        ang = raise.a + (follow.a - raise.a) * e;
+      } else if (attacking) {
+        // recover: settle from follow-through back to carry
+        const t = Math.min(1, this.atkT / Math.max(1, this.atkSeq[this.atkIdx]?.dur ?? 8));
+        const e = t * t * (3 - 2 * t);
+        px = follow.x + (carry.x - follow.x) * e;
+        py = follow.y + (carry.y - follow.y) * e;
+        ang = follow.a + (carry.a - follow.a) * e;
+      }
       this.weaponImg.setOrigin(def?.grip ?? 0.2, 0.5);
-      this.weaponImg.setPosition(hx, hy);
-      this.weaponImg.setAngle(this.facing > 0 ? a : 180 - a);
+      this.weaponImg.setPosition(this.fx + this.facing * px, this.fy - this.fz - py);
+      this.weaponImg.setAngle(this.facing > 0 ? ang : 180 - ang);
       this.weaponImg.setFlipX(this.facing < 0);
       this.weaponImg.setDepth(this.fy + 1);
       this.weaponImg.setVisible(!this.dead);

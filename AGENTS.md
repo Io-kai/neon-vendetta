@@ -30,10 +30,14 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
   - "FOUNDATION" hydraulic sledge: impact detonates a radial ground
     **shockwave** (`shockwave`, GameScene.shockwave()). Stage 3.
   - WEAPON_DEFS also carries per-weapon held-sprite geometry (grip,
-    idle/swing offsets + angles); `Player.syncWeaponSprite()` carries
-    tip-UP at the side (idleAngle ≈ -80°) — a 2026-09-21 iteration put
-    the weapon at 70° from the hip, which read terribly. Sledge rests
-    head-down (68°). Palette gains c/e/s; WEAPON_GLOW tints pickup glows.
+    idle/swing offsets + angles) and an `arc` style (swing/smash/stab).
+    `Player.syncWeaponSprite()` ANIMATES the weapon: carry (tip-up at
+    the side, ≈ -80°) → cocked windup raise (ARC_RAISE per style) →
+    fast-snap arc sweep (pow(t,0.42) easing) → settle recover. Sledge
+    rests head-down (68°) and smashes to ground level. Weapon smear
+    trails render in GameScene.stepFx during active poses. All 7 weapon
+    pixel maps were redrawn larger with shaded detail 2026-09-21.
+    Palette gains c/e/s; WEAPON_GLOW tints pickup glows.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
 - Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
 - Other QA scripts in scripts/: visual-qa.mjs (25 checks incl. all weapon
