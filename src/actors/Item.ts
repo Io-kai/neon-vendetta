@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 
-export type ItemKind = 'pipe' | 'knife' | 'ramen' | 'soda' | 'cash';
+export type ItemKind = 'pipe' | 'knife' | 'bat' | 'katana' | 'ramen' | 'soda' | 'cash';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -14,9 +14,25 @@ export interface ItemDef {
 export const ITEM_DEFS: Record<ItemKind, ItemDef> = {
   pipe:  { kind: 'pipe',  uses: 6 },
   knife: { kind: 'knife', uses: 5 },
+  bat:   { kind: 'bat',   uses: 8 },
+  katana:{ kind: 'katana',uses: 4 },
   ramen: { kind: 'ramen', heal: 50 },
   soda:  { kind: 'soda',  heal: 20 },
   cash:  { kind: 'cash',  score: 300 },
+};
+
+/** Per-weapon swing behavior. Presence here marks the item kind as a weapon. */
+export interface WeaponDef {
+  dmg: number; reach: number; width: number;
+  launch: boolean; heavy: boolean;
+  windup: number; swing: number; recover: number;
+}
+
+export const WEAPON_DEFS: Partial<Record<ItemKind, WeaponDef>> = {
+  pipe:   { dmg: 15, reach: 48, width: 30, launch: true,  heavy: true,  windup: 6, swing: 6, recover: 8 },
+  knife:  { dmg: 11, reach: 40, width: 26, launch: false, heavy: false, windup: 4, swing: 5, recover: 6 },
+  bat:    { dmg: 13, reach: 56, width: 32, launch: false, heavy: true,  windup: 7, swing: 7, recover: 9 },
+  katana: { dmg: 22, reach: 46, width: 28, launch: true,  heavy: true,  windup: 5, swing: 6, recover: 8 },
 };
 
 export class Item {

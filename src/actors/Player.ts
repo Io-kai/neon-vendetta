@@ -3,6 +3,7 @@
 
 import Phaser from 'phaser';
 import { Fighter, AttackKey, HitSpec } from './Fighter';
+import { WEAPON_DEFS, ItemKind } from './Item';
 
 export interface CharStats {
   id: string;
@@ -55,7 +56,7 @@ export class Player extends Fighter {
   lives = 3;
   comboHits = 0;
   comboT = 0;
-  weapon: { type: string; uses: number } | null = null;
+  weapon: { type: ItemKind; uses: number } | null = null;
 
   private keys: Record<string, Phaser.Input.Keyboard.Key> = {};
   private prev = { attack: false, jump: false, special: false };
@@ -251,17 +252,18 @@ export class Player extends Fighter {
     this.scene.events.emit('sfx', 'swing');
   }
 
-  /** Weapon swing (pipe/knife). Returns false if no weapon. */
+  /** Weapon swing (stats from WEAPON_DEFS). Returns false if no weapon. */
   swingWeapon(): boolean {
     if (!this.weapon) return false;
     const w = this.weapon;
+    const def = WEAPON_DEFS[w.type] ?? WEAPON_DEFS.pipe!;
     w.uses--;
-    const dmg = Math.round(15 * this.stats.power);
+    const dmg = Math.round(def.dmg * this.stats.power);
     this.comboStage = 0;
     this.startAttack([
-      { frame: 'swingWindup', dur: 6, move: 0.3 },
-      { frame: 'swing', dur: 6, move: 1.4, hit: { reach: 48, width: 30, dmg, heavy: true, launch: w.type === 'pipe' } },
-      { frame: 'swingRecover', dur: 8 },
+      { frame: 'swingWindup', dur: def.windup, move: 0.3 },
+      { frame: 'swing', dur: def.swing, move: 1.4, hit: { reach: def.reach, width: def.width, dmg, heavy: def.heavy, launch: def.launch } },
+      { frame: 'swingRecover', dur: def.recover },
     ]);
     this.scene.events.emit('sfx', 'swing');
     if (w.uses <= 0) {
@@ -373,6 +375,8 @@ export class Player extends Fighter {
       this.weaponImg.setFlipX(this.facing < 0);
       this.weaponImg.setDepth(this.fy + 1);
       this.weaponImg.setVisible(!this.dead);
+      // blink when one swing remains so low durability reads at a glance
+      this.weaponImg.setAlpha(this.weapon.uses <= 1 && (this.scene.time.now >> 5) % 2 === 0 ? 0.35 : 1);
     } else if (this.weaponImg) {
       this.weaponImg.setVisible(false);
     }

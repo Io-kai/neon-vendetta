@@ -10,7 +10,7 @@ import {
 import { Fighter, HitSpec } from '../actors/Fighter';
 import { Player, ROSTER } from '../actors/Player';
 import { Enemy, ENEMY_TYPES } from '../actors/Enemy';
-import { Item, ItemKind } from '../actors/Item';
+import { Item, ItemKind, WEAPON_DEFS } from '../actors/Item';
 import { Background, STAGE_1, StageDef, CAMPAIGN } from '../world/Stage';
 import { addText, addTextCentered, bakeText, textWidth } from '../art/font';
 import { Jukebox } from '../audio/jukebox';
@@ -454,6 +454,19 @@ export class GameScene extends Phaser.Scene {
 
   private maybeDrop(victim: Enemy): void {
     if (victim.type.boss) return;
+    // armed enemies can drop their gear; armored foes rarely drop the good stuff
+    if (victim.type.knifeVisual && Math.random() < 0.3) {
+      this.items.push(new Item(this, 'knife', victim.fx, victim.fy));
+      return;
+    }
+    if ((victim.type.id === 'brute' || victim.type.id === 'husk') && Math.random() < 0.1) {
+      this.items.push(new Item(this, 'bat', victim.fx, victim.fy));
+      return;
+    }
+    if (victim.type.id === 'sentinel' && Math.random() < 0.12) {
+      this.items.push(new Item(this, 'katana', victim.fx, victim.fy));
+      return;
+    }
     if (Math.random() < 0.2) {
       const r = Math.random();
       const kind: ItemKind = r < 0.3 ? 'ramen' : r < 0.65 ? 'soda' : 'cash';
@@ -517,7 +530,7 @@ export class GameScene extends Phaser.Scene {
     if (p.weapon) { p.swingWeapon(); return; }
     // pick up a nearby weapon
     for (const it of this.items) {
-      if (it.taken || (it.def.kind !== 'pipe' && it.def.kind !== 'knife')) continue;
+      if (it.taken || !WEAPON_DEFS[it.def.kind]) continue;
       if (Math.abs(it.fx - p.fx) < 20 && Math.abs(it.fy - p.fy) < 10) {
         it.taken = true;
         p.weapon = { type: it.def.kind, uses: it.def.uses ?? 5 };
@@ -783,7 +796,7 @@ export class GameScene extends Phaser.Scene {
     for (const it of this.items) {
       it.step();
       if (it.taken) continue;
-      if (it.def.kind === 'pipe' || it.def.kind === 'knife') continue; // manual pickup
+      if (WEAPON_DEFS[it.def.kind]) continue; // manual pickup
       for (const p of alivePlayers) {
         if (p.busy || p.airborne) continue;
         if (Math.abs(it.fx - p.fx) < 14 && Math.abs(it.fy - p.fy) < 8) {
