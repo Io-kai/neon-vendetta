@@ -65,6 +65,69 @@ try {
  check(await page.evaluate(()=>{const s=window.__NV_GAME__.scene.getScene('GameScene');return s.players.length===1&&s.motes.length===0&&!s.paused;}),'restart resets game and effect state');
  await page.keyboard.down('KeyJ');await sleep(100);await page.keyboard.up('KeyJ');
  check(await page.evaluate(()=>window.__NV_GAME__.scene.getScene('GameScene').players.length===2),'P2 join-in still works');
+
+ // ---- weapons QA: bat (stage 1) and katana (stage 2) render + pickup ----
+ const texPx=await page.evaluate(()=>{
+  const t=window.__NV_GAME__.textures;const out={};
+  for(const key of ['item_bat','item_katana']){
+   if(!t.exists(key)){out[key]=0;continue;}
+   const img=t.get(key).getSourceImage();const c=img.getContext('2d');
+   const d=c.getImageData(0,0,img.width,img.height).data;let n=0;
+   for(let i=3;i<d.length;i+=4)if(d[i])n++;
+   out[key]=n;
+  }return out;
+ });
+ check(texPx.item_bat>20,`bat texture has painted pixels (${texPx.item_bat})`);
+ check(texPx.item_katana>20,`katana texture has painted pixels (${texPx.item_katana})`);
+
+ for(const [wname,stageIdx] of [['bat',1],['katana',2]]) {
+  await page.evaluate(idx=>{window.__NV_GAME__.scene.getScene('GameScene').scene.restart({stageIndex:idx,players:1});},stageIdx);
+  await page.waitForFunction(k=>{
+   const s=window.__NV_GAME__.scene.getScene('GameScene');
+   return window.__NV_GAME__.scene.isActive('GameScene')&&s.players?.length===1&&s.items?.some(i=>i.def.kind===k);
+  },{},wname);
+  await sleep(350);await press('Escape');await sleep(800);
+  // ground placement shot, weapon centered in frame
+  await page.evaluate(k=>{
+   const s=window.__NV_GAME__.scene.getScene('GameScene');
+   s.paused=true;s.introT=0;
+   s.hud.msgImg?.destroy();s.hud.msgImg=null;
+   const it=s.items.find(i=>i.def.kind===k&&!i.taken);
+   s.camX=Math.max(0,it.fx-240);
+   const p=s.players[0];
+   p.minX=s.camX;p.maxX=s.camX+480;
+   p.fx=it.fx+36;p.fy=it.fy;p.fz=0;p.vz=0;p.vx=0;p.vy=0;
+   p.setState('idle');p.step();it.step();
+  },wname);
+  await sleep(200);await page.screenshot({path:out+`premium-weapon-${wname}-ground.png`});
+  // walk onto it and pick it up via the real attack-pickup path
+  const picked=await page.evaluate(k=>{
+   const s=window.__NV_GAME__.scene.getScene('GameScene');
+   const p=s.players[0];
+   const it=s.items.find(i=>i.def.kind===k&&!i.taken);
+   if(!it)return null;
+   p.fx=it.fx;p.fy=it.fy;p.setState('idle');
+   s.paused=false;s.introT=0;
+   s.onGroundAttack(p);
+   s.paused=true;
+   p.step();p.syncWeaponSprite();
+   return p.weapon?.type??null;
+  },wname);
+  check(picked===wname,`${wname} pickup equips the ${wname}`);
+  await sleep(150);await page.screenshot({path:out+`premium-weapon-${wname}-held.png`});
+  // swing: advance the player state machine into the active swing pose
+  const swung=await page.evaluate(()=>{
+   const s=window.__NV_GAME__.scene.getScene('GameScene');
+   const p=s.players[0];
+   if(!p.weapon)return false;
+   const ok=p.swingWeapon();
+   for(let i=0;i<9;i++){p.step();p.syncWeaponSprite();}
+   return ok;
+  });
+  check(swung,`${wname} swing activates`);
+  await sleep(150);await page.screenshot({path:out+`premium-weapon-${wname}-swing.png`});
+ }
+
  check(errors.length===0,'no runtime exceptions: '+errors.join('; '));
  writeFileSync(out+'visual-checks.json',JSON.stringify(checks,null,2));
 } finally { await browser.close(); }

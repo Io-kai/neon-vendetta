@@ -458,10 +458,11 @@ export const ITEM_MAPS: Record<string, PixMap> = {
     '..oooooooooo...',
   ],
   katana: [
-    '.....oooooooo',
-    '.ommmmmmmmwo.',
-    'obbbo........',
-    '.............',
+    '.....ooooooooo',
+    '.ommmmmmmmmwo.',
+    '.owwwwwwwwwo..',
+    'obbboooooooo..',
+    '..............',
   ],
   ramen: [
     '..w..w......',
