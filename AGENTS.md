@@ -8,8 +8,14 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
 - Git initialized 2026-09-21 (baseline `a860803`). **Remote**:
   `github.com/Io-kai/neon-vendetta` (public, default branch `main`;
   local `master` tracks `origin/main`). **Vercel git integration is
-  connected — pushing to `main` auto-deploys production** at
-  https://neon-vendetta.vercel.app.
+  connected — pushing to `main` auto-deploys production.**
+- **Live production URL: https://neon-vendetta-v334.vercel.app**
+  (project `neon-vendetta-v334`, team `io-kais-projects`, created via the
+  dashboard git-import 2026-09-21). WARNING: `neon-vendetta.vercel.app`
+  is a STALE older project (baseline build, team
+  `team_BGsbwWsffQg5x0lNc7ermkuK`, the one in `.vercel/project.json`) —
+  it does not receive git deployments. If the clean domain is wanted,
+  reassign it in the Vercel dashboard (needs project access).
 - History was rewritten once (2026-09-21) to purge a 277MB committed
   puppeteer Chrome (`.cache/`) from the baseline; do not commit `.cache/`.
 - Latest work: **hero signature weapons** — each hero fights with an
