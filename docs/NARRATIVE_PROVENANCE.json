@@ -1,0 +1,7 @@
+{
+  "author_model": "claude-sonnet-5",
+  "source": "authenticated Claude CLI, exact model pinned",
+  "script": "SONNET_SCRIPT.md",
+  "dialogue": "Verbatim from model output; uppercase display normalization only",
+  "implementation": "Codex animation, game integration and verification"
+}

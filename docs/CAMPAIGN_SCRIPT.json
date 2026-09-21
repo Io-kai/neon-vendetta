@@ -1,0 +1,17 @@
+{
+  "author": "claude-sonnet-5",
+  "levels": [
+    {
+      "intro": "Korvo's dead, the lights are back\u2014but Vesper Row still owns the district's real key.",
+      "outro": "Sable's blades are down. The access key's ours. Now find what it opens."
+    },
+    {
+      "intro": "The key leads to Ash Canal\u2014cooling lines feeding a tower that shouldn't need this much power.",
+      "outro": "Cinder's back in the water. The cooling line traces straight up to Glass Spire."
+    },
+    {
+      "intro": "Glass Spire. One switch up top decides who gets to flip this city's lights off again.",
+      "outro": "Orison's down. The switch is public now\u2014nobody owns the dark alone."
+    }
+  ]
+}

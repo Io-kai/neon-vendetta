@@ -1,0 +1,8 @@
+node_modules
+dist
+.cache
+.e2e
+scripts
+docs
+*.log
+.env*
