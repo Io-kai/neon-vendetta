@@ -5,29 +5,48 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
 
 ## State (as of 2026-09-21)
 
-- Git was initialized 2026-09-21 (baseline `a860803`); **no remote yet**.
-- Latest commit `52db7da`: weapons pass — data-driven `WEAPON_DEFS`
-  (src/actors/Item.ts), new **bat** and **katana** pickups with pixel-art
-  maps (src/art/parts.ts), weapon drops from enemies and stage placements
-  (src/world/Stage.ts), per-weapon swing stats in `Player.swingWeapon()`,
-  low-durability blink on the weapon sprite.
+- Git initialized 2026-09-21 (baseline `a860803`). **Remote**:
+  `github.com/Io-kai/neon-vendetta` (public, default branch `main`;
+  local `master` tracks `origin/main`). **Vercel git integration is
+  connected — pushing to `main` auto-deploys production** at
+  https://neon-vendetta.vercel.app.
+- History was rewritten once (2026-09-21) to purge a 277MB committed
+  puppeteer Chrome (`.cache/`) from the baseline; do not commit `.cache/`.
+- Latest work: **hero signature weapons** — each hero fights with an
+  innate, unbreakable weapon (src/actors/heroWeapons.ts):
+  - Kane "STREETLIGHT" stun baton: 3-hit combo, arc finisher **stuns**
+    survivors upright 50 ticks (`HitSpec.stun`), electric crackle motes.
+  - Jinx "YELLOWLINE" mono-edge: fastest chain with forward drift,
+    dash-slash finisher launches (`HitSpec.slash` crescent arc FX).
+  - Bull "FOUNDATION" hydraulic sledge: 2-hit combo, crusher detonates a
+    radial **shockwave** (`HitSpec.shockwave`, GameScene.shockwave()).
+  - Art: `WPN_MAPS` in src/art/parts.ts baked as `wpn_<id>` textures;
+    palette gains c/e/s. `Player.syncWeaponSprite()` renders pickups OR
+    the signature (per-weapon grip/carry/swing geometry). Pickups still
+    override the signature until they break.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
-- Headless regression: `node scripts/combat-checks.mjs` (11 checks). Green.
-- Other QA scripts in scripts/: visual-qa.mjs, e2e.mjs, smoke.ts (Puppeteer;
-  use `PUPPETEER_SKIP_DOWNLOAD=true` when installing).
+- Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
+- Other QA scripts in scripts/: visual-qa.mjs (29 checks incl. weapon
+  pickups + hero signature finishers), e2e.mjs, smoke.ts (Puppeteer;
+  use `PUPPETEER_SKIP_DOWNLOAD=true` when installing; puppeteer's pinned
+  Chrome is NOT downloaded — run with
+  `PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome`).
 
-## Deploy & launch (current objective)
+## Deploy & launch
 
 - **Vercel-linked**: `.vercel/project.json` → project `neon-vendetta`,
   team `team_BGsbwWsffQg5x0lNc7ermkuK`. `vercel.json` is configured
   (framework vite, output dist, immutable asset caching).
-- Deploy path: Vercel CLI from repo root — `vercel` (preview) /
-  `vercel --prod` (production). Needs `vercel login` or `VERCEL_TOKEN`.
-  **Production deploys are external writes: always get Brian's explicit
-  confirmation immediately before `vercel --prod`.** Preview deploys are
-  fine to run and share.
-- Alternative: connect the repo to Git (`vercel git connect`) once a remote
-  exists — currently there is none.
+- **Primary deploy path: push to `main` on GitHub — Vercel auto-builds
+  production.** Production deploys are external writes: always get
+  Brian's explicit confirmation immediately before pushing.
+- CLI path (`vercel` / `vercel --prod`) needs `vercel login` or
+  `VERCEL_TOKEN`; the stored OAuth token expired 2026-09 and the CLI's
+  failed refresh wiped `~/.local/share/com.vercel.cli/auth.json` — if
+  the CLI is needed, Brian must re-login. The CLI also writes its cache
+  under `$HOME`, which the DSH sandbox blocks (EROFS) without escalation.
+- Verify deployments from GitHub:
+  `gh api repos/Io-kai/neon-vendetta/deployments` (+ `/statuses`).
 - Local launch: `npm run dev` (vite dev server) or
   `npm run build && npm run preview`.
 

@@ -61,6 +61,7 @@ export class GameScene extends Phaser.Scene {
   private combatInk!: Phaser.GameObjects.Graphics;
   private routeInk!: Phaser.GameObjects.Graphics;
   private motes: {x:number; y:number; vx:number; vy:number; life:number; max:number; color:number}[] = [];
+  private slashes: {x:number; y:number; facing:number; t:number; r:number}[] = [];
   private players: Player[] = [];
   private enemies: Enemy[] = [];
   private items: Item[] = [];
@@ -143,6 +144,7 @@ export class GameScene extends Phaser.Scene {
     this.thrownHits.clear();
     this.fx = [];
     this.motes = [];
+    this.slashes = [];
 
     this.cameras.main.removeBounds();
     this.cameras.main.setOrigin(0, 0).setZoom(3);
@@ -384,16 +386,46 @@ export class GameScene extends Phaser.Scene {
     if (this.hitstopT === 0) {
       for (const fighter of [...this.players, ...this.enemies]) {
         const key = fighter.atkSeq[fighter.atkIdx];
-        if (!fighter.dead && (fighter.state === 'attack' || fighter.state === 'special') && key?.hit && fighter.atkT % 3 === 1) {
+        if (!fighter.dead && (fighter.state === 'attack' || fighter.state === 'special') && key?.hit) {
+          // Jinx mono-edge finisher: crescent slash arc at the blade's path
+          if (key.hit.slash && fighter.atkT === 1) {
+            this.slashes.push({ x: fighter.fx + fighter.facing * 20, y: fighter.fy - fighter.fz - 30, facing: fighter.facing, t: 0, r: key.hit.slash });
+          }
+          // Kane baton arc: live electrodes crackle for the whole active pose
+          if (key.hit.stun && fighter.atkT % 2 === 0) {
+            for (let i = 0; i < 2; i++) {
+              this.motes.push({
+                x: fighter.fx + fighter.facing * (18 + Math.random() * 26),
+                y: fighter.fy - fighter.fz - 26 - Math.random() * 18,
+                vx: (Math.random() - 0.5) * 2.4, vy: (Math.random() - 0.5) * 2.4,
+                life: 10, max: 10, color: i ? 0xd8f4ff : 0x58e8ff,
+              });
+            }
+          }
+          if (fighter.atkT % 3 === 1) {
           const color = fighter.team === 'player' ? 0x66ffee : 0xff70bb;
           const img = this.add.image(fighter.sprite.x - fighter.facing * 3, fighter.sprite.y, fighter.sprite.texture.key)
             .setOrigin(0.5, 1).setScale(fighter.sprite.scaleX, fighter.sprite.scaleY)
             .setFlipX(fighter.facing < 0).setTint(color).setAlpha(0.23)
             .setBlendMode(Phaser.BlendModes.ADD).setDepth(fighter.fy - 0.2);
           this.fx.push({ img, t: 0, kind: 'trail' });
+          }
         }
       }
     }
+    for (const s of this.slashes) {
+      s.t++;
+      const a = Math.max(0, 1 - s.t / 9);
+      const r = s.r * (0.75 + s.t * 0.05);
+      for (let i = 0; i < 3; i++) {
+        this.combatInk.lineStyle(3 - i, i === 0 ? 0xffffff : 0x58e8ff, a * (1 - i * 0.28));
+        this.combatInk.beginPath();
+        if (s.facing > 0) this.combatInk.arc(s.x, s.y, r - i * 5, -1.25, 0.55);
+        else this.combatInk.arc(s.x, s.y, r - i * 5, Math.PI - 0.55, Math.PI + 1.25);
+        this.combatInk.strokePath();
+      }
+    }
+    this.slashes = this.slashes.filter(s => s.t < 9);
     for (const m of this.motes) {
       m.life--; m.x += m.vx; m.y += m.vy; m.vy += 0.16;
       this.combatInk.lineStyle(1, m.color, m.life / m.max);
@@ -431,7 +463,8 @@ export class GameScene extends Phaser.Scene {
       const angle = (i / count) * Math.PI * 2;
       const speed = 1.4 + (i % 4) * 0.8;
       this.motes.push({x:sx,y:sy,vx:Math.cos(angle)*speed + attacker.facing,
-        vy:Math.sin(angle)*speed-1,life:18,max:18,color:i%2 ? 0xffd899 : 0x8bfff0});
+        vy:Math.sin(angle)*speed-1,life:18,max:18,
+        color:spec.stun ? (i%2 ? 0xd8f4ff : 0x58e8ff) : (i%2 ? 0xffd899 : 0x8bfff0)});
     }
     if (this.motes.length > 160) this.motes.splice(0, this.motes.length - 160);
 
@@ -448,6 +481,32 @@ export class GameScene extends Phaser.Scene {
       if (victim.dead && victim instanceof Enemy) {
         attacker.score += victim.type.score;
         this.maybeDrop(victim);
+      }
+    }
+  }
+
+  /** Sledge crusher impact: dust ring, debris, and a radial knockdown that
+   *  launches every grounded enemy within `radius` (primary victims already
+   *  in `already` are skipped so nobody takes double damage). */
+  private shockwave(f: Player, radius: number, already: Set<number>): void {
+    this.cameras.main.shake(140, 0.007);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      this.spawnFx('dust', f.fx + Math.cos(a) * radius * 0.55, f.fy + Math.sin(a) * 9);
+    }
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      this.motes.push({ x: f.fx, y: f.fy - 4, vx: Math.cos(a) * 3.2, vy: Math.sin(a) * 1.2 - 1.4,
+        life: 20, max: 20, color: i % 2 ? 0xd8b078 : 0x8bfff0 });
+    }
+    const spec: HitSpec = { reach: 0, width: 0, dmg: Math.round(9 * f.stats.power), launch: true, heavy: true };
+    for (const e of this.enemies) {
+      if (e.dead || e.removeMe || already.has(e.id) || e.invulnT > 0) continue;
+      if (e.state === 'down' || e.state === 'thrown' || e.state === 'launched') continue;
+      if (Math.abs(e.fx - f.fx) > radius || Math.abs(e.fy - f.fy) > 20 || e.fz > 10) continue;
+      if (e.takeHit(f, spec)) {
+        already.add(e.id);
+        this.hitLanded(f, spec, e);
       }
     }
   }
@@ -492,6 +551,11 @@ export class GameScene extends Phaser.Scene {
             already.add(o.id);
             hits++;
             this.hitLanded(f, spec, o);
+            // Bull's sledge crusher: the first connect detonates a ground
+            // shockwave that launches everyone still standing nearby.
+            if (spec.shockwave && f instanceof Player && !f.hitConnected) {
+              this.shockwave(f, spec.shockwave, already);
+            }
           }
         }
       }

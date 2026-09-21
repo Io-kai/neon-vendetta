@@ -18,6 +18,9 @@ export interface HitSpec {
   z0?: number;
   z1?: number;
   hh?: number;          // lane half-tolerance
+  stun?: number;        // paralyze ticks instead of a launch (baton arc)
+  shockwave?: number;   // ground shockwave radius on first connect (sledge)
+  slash?: number;       // crescent slash-arc FX radius (mono-edge dash)
 }
 
 export interface AttackKey {
@@ -211,8 +214,10 @@ export class Fighter {
       this.setState('launched');
       this.setFrame('hurt');
     } else {
-      this.hurtT = spec.heavy ? 16 : 11;
-      this.vx = dir * (spec.heavy ? 2.0 : 1.1);
+      // A stun holds the victim upright and paralyzed instead of knocking
+      // them back — crowd control rather than damage output.
+      this.hurtT = spec.stun ?? (spec.heavy ? 16 : 11);
+      this.vx = dir * (spec.stun ? 0.3 : spec.heavy ? 2.0 : 1.1);
       this.setState('hurt');
       this.setFrame('hurt');
     }

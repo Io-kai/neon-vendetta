@@ -7,7 +7,7 @@ import { bakePremiumEffects } from './effects';
 import { bakePremiumCharacters } from './fighters';
 import { bakePremiumBackgrounds } from './city';
 import { CHAR_PALETTES, FX_PALETTE, Palette } from './palette';
-import { BODIES, CHAR_ART, FX_MAPS, ITEM_MAPS, PixMap } from './parts';
+import { BODIES, CHAR_ART, FX_MAPS, ITEM_MAPS, WPN_MAPS, PixMap } from './parts';
 import { GAME_H, GAME_W } from '../config';
 
 function drawMap(
@@ -104,6 +104,14 @@ export function bakeItemsAndFx(scene: Phaser.Scene): void {
     if (scene.textures.exists(`item_${key}`)) continue;
     const { w, h } = mapSize(map);
     const tex = scene.textures.createCanvas(`item_${key}`, w, h);
+    if (!tex) continue;
+    drawMap(tex.getContext(), map, FX_PALETTE, 0, 0);
+    tex.refresh();
+  }
+  for (const [key, map] of Object.entries(WPN_MAPS)) {
+    if (scene.textures.exists(`wpn_${key}`)) continue;
+    const { w, h } = mapSize(map);
+    const tex = scene.textures.createCanvas(`wpn_${key}`, w, h);
     if (!tex) continue;
     drawMap(tex.getContext(), map, FX_PALETTE, 0, 0);
     tex.refresh();
