@@ -464,6 +464,41 @@ export const ITEM_MAPS: Record<string, PixMap> = {
     'obbboooooooo..',
     '..............',
   ],
+  // "STREETLIGHT" stun baton: dark riot grip, steel shaft, twin emitter
+  // rings and a crackling blue-white tip.
+  baton: [
+    '.............oo.....',
+    '..oooooooooooeewwo..',
+    '.obbbbsmmmmceewweco.',
+    '.obbsbsmmsmeewweco..',
+    '..oooooooooooeewwo..',
+    '.............oo.....',
+  ],
+  // "YELLOWLINE" mono-edge: courier-yellow wrapped grip, guard, long steel
+  // spine with a glowing cyan monomolecular cutting edge.
+  monoedge: [
+    '........oooooooooooooo.',
+    '..ooooommmmmmmmmmmmwwoc',
+    '.obybyboocccccccccccewo',
+    '..obyboo...............',
+    '...bbbb................',
+    '....ooo................',
+  ],
+  // "FOUNDATION" hydraulic sledge: steel haft, massive block head with
+  // hazard stripes and a dark hydraulic piston band.
+  sledge: [
+    '........ooooooooooo..',
+    '........ommmmmmmmmo..',
+    '........omyysyysmmo..',
+    '........ommmmmmmmmo..',
+    '..ooooooossssssssso..',
+    '.ommmmmsmmmmmmmmmmo..',
+    '..ooooooossssssssso..',
+    '........ommmmmmmmmo..',
+    '........omyysyysmmo..',
+    '........ommmmmmmmmo..',
+    '........ooooooooooo..',
+  ],
   ramen: [
     '..w..w......',
     '.wwwwwwwwww.',
@@ -556,46 +591,3 @@ ITEM_MAPS.soda = [
   'ommmmmmo',
   '.ooooo.',
 ];
-
-// ---------------------------------------------------------------------------
-// HERO SIGNATURE WEAPONS — baked as `wpn_<id>` textures. Drawn horizontally,
-// grip on the left; Player.syncWeaponSprite anchors them at `grip` origin.
-// ---------------------------------------------------------------------------
-
-export const WPN_MAPS: Record<string, PixMap> = {
-  // KANE — "STREETLIGHT" stun baton: dark riot grip, steel shaft, twin
-  // emitter rings and a crackling blue-white tip.
-  baton: [
-    '.............oo.....',
-    '..oooooooooooeewwo..',
-    '.obbbbsmmmmceewweco.',
-    '.obbsbsmmsmeewweco..',
-    '..oooooooooooeewwo..',
-    '.............oo.....',
-  ],
-  // JINX — "YELLOWLINE" mono-edge: courier-yellow wrapped grip, guard, long
-  // steel spine with a glowing cyan monomolecular cutting edge.
-  monoedge: [
-    '........oooooooooooooo.',
-    '..ooooommmmmmmmmmmmwwoc',
-    '.obybyboocccccccccccewo',
-    '..obyboo...............',
-    '...bbbb................',
-    '....ooo................',
-  ],
-  // BULL — "FOUNDATION" hydraulic sledge: steel haft, massive block head
-  // with hazard stripes and a dark hydraulic piston band.
-  sledge: [
-    '........ooooooooooo..',
-    '........ommmmmmmmmo..',
-    '........omyysyysmmo..',
-    '........ommmmmmmmmo..',
-    '..ooooooossssssssso..',
-    '.ommmmmsmmmmmmmmmmo..',
-    '..ooooooossssssssso..',
-    '........ommmmmmmmmo..',
-    '........omyysyysmmo..',
-    '........ommmmmmmmmo..',
-    '........ooooooooooo..',
-  ],
-};

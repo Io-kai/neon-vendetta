@@ -100,61 +100,49 @@ check('heavy armor cannot bypass invulnerability', () => {
   assert.equal(e.takeHit(fighter(), { reach: 20, width: 20, dmg: 5 }), false); assert.equal(e.hp, e.maxHp);
 });
 
-// Drive a signature combo to its finisher by buffering attack presses,
-// then return the finisher's live hit spec.
-function finisherSpec(p, stages) {
-  p.beginCombo();
-  for (let s = 1; s < stages; s++) {
-    p.control({ ...neutral, attackPr: true }, bounds);
-    for (let i = 0; i < 40 && p.comboStage === s; i++) { p.step(); p.control(neutral, bounds); }
-    assert.equal(p.comboStage, s + 1);
-  }
-  for (let i = 0; i < 40; i++) {
+// Swing a held pickup weapon once and return its live hit spec.
+function swingSpec(p, type, uses = 3) {
+  p.weapon = { type, uses };
+  assert.equal(p.swingWeapon(), true);
+  for (let i = 0; i < 30; i++) {
     const consumed = p.consumeHit();
     if (consumed) return consumed.spec;
     p.step(); p.control(neutral, bounds);
   }
-  throw Error('finisher never went live');
+  throw Error(`${type} swing never went live`);
 }
-check('kane baton arc finisher paralyzes survivors upright', () => {
+check('baton pickup paralyzes survivors upright', () => {
   const p = new Player(scene, 0, 'kane', 100, 190);
-  const spec = finisherSpec(p, 3);
-  assert.equal(spec.stun, 50); assert.equal(spec.heavy, true); assert.ok(!spec.launch);
-  assert.equal(spec.dmg, 14); // 14 * kane power 1.0
+  const spec = swingSpec(p, 'baton');
+  assert.equal(spec.stun, 35); assert.equal(spec.heavy, true); assert.ok(!spec.launch);
   const e = new Enemy(scene, 'punk', 130, 190, 1);
   assert.equal(e.takeHit(p, spec), true);
-  assert.equal(e.state, 'hurt'); assert.equal(e.hurtT, 50); // held in place, not launched
+  assert.equal(e.state, 'hurt'); assert.equal(e.hurtT, 35); // held in place, not launched
 });
-check('jinx mono-edge finisher is a launching dash-slash', () => {
+check('mono-edge pickup dash-slashes through and launches', () => {
   const p = new Player(scene, 0, 'jinx', 100, 190);
-  const spec = finisherSpec(p, 3);
+  const spec = swingSpec(p, 'monoedge');
   assert.equal(spec.slash, 34); assert.equal(spec.launch, true);
-  assert.equal(spec.dmg, Math.round(12 * 0.82));
   const x0 = p.fx; p.step();
-  assert.ok(p.fx - x0 > 2.5, `dash drift during active pose (moved ${p.fx - x0})`);
+  assert.ok(p.fx - x0 > 2, `dash drift during active pose (moved ${p.fx - x0})`);
 });
-check('bull sledge crusher launches with a ground shockwave', () => {
+check('sledge pickup launches with a ground shockwave', () => {
   const p = new Player(scene, 0, 'bull', 100, 190);
-  const spec = finisherSpec(p, 2); // two-stage combo
+  const spec = swingSpec(p, 'sledge');
   assert.equal(spec.shockwave, 72); assert.equal(spec.launch, true);
-  assert.equal(spec.dmg, Math.round(22 * 1.4));
-  // no third stage: buffered presses after the crusher do nothing
-  p.comboQueued = true;
-  for (let i = 0; i < 60; i++) { p.step(); p.control({ ...neutral, attackPr: i === 0 }, bounds); }
-  assert.equal(p.comboStage, 2);
+  assert.equal(spec.dmg, Math.round(24 * 1.4));
 });
-check('signature combo is innate and costs no durability', () => {
+check('pickup swings spend durability and break back to fists', () => {
   const p = new Player(scene, 0, 'kane', 100, 190);
-  p.beginCombo();
-  const spec = finisherSpec(p, 1);
-  assert.equal(spec.dmg, 8); assert.equal(p.weapon, null);
-});
-check('pickup weapon overrides the signature until it breaks', () => {
-  const p = new Player(scene, 0, 'kane', 100, 190);
-  p.weapon = { type: 'pipe', uses: 1 };
-  assert.equal(p.swingWeapon(), true);
+  swingSpec(p, 'pipe', 1);
   assert.equal(p.weapon, null); // broke on that swing
-  p.beginCombo(); // signature combo available again immediately
+  p.beginCombo(); // fists combo available again immediately
   assert.equal(p.atkSeq[0].frame, 'jabWindup'); assert.equal(p.state, 'attack');
+});
+check('fist combo still chains jab into cross', () => {
+  const p = new Player(scene, 0, 'kane', 100, 190); p.beginCombo();
+  p.control({ ...neutral, attackPr: true }, bounds); assert.equal(p.atkIdx, 0);
+  for (let i = 0; i < 10; i++) { p.step(); p.control(neutral, bounds); }
+  assert.equal(p.atkSeq[0].frame, 'crossWindup'); assert.equal(p.comboStage, 2);
 });
 console.log(`${checks} combat regression checks passed.`);

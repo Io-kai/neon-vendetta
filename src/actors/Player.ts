@@ -4,7 +4,6 @@
 import Phaser from 'phaser';
 import { Fighter, AttackKey, HitSpec } from './Fighter';
 import { WEAPON_DEFS, ItemKind } from './Item';
-import { HERO_WEAPONS, HeroWeaponDef } from './heroWeapons';
 
 export interface CharStats {
   id: string;
@@ -24,21 +23,21 @@ export const ROSTER: Record<string, CharStats> = {
     id: 'kane', name: 'KANE', title: 'THE ALL-ROUNDER',
     walk: 1.75, lane: 1.1, power: 1.0, jumpV: 7.6,
     specialName: 'TYPHOON LARIAT',
-    desc: ['BALANCED BRAWLER', 'STUN BATON', 'ARC-STUN FINISHER'],
+    desc: ['BALANCED BRAWLER', 'LARIAT HITS', 'ALL SIDES'],
     pw: 3, sp: 3, sk: 3,
   },
   jinx: {
     id: 'jinx', name: 'JINX', title: 'THE BLUR',
     walk: 2.15, lane: 1.35, power: 0.82, jumpV: 8.2,
     specialName: 'DRAGON RISE',
-    desc: ['FASTEST OF TRIO', 'MONO-EDGE BLADE', 'DASH-SLASH FINISHER'],
+    desc: ['FASTEST OF TRIO', 'UPPERCUT', 'LAUNCHES FOES'],
     pw: 2, sp: 5, sk: 4,
   },
   bull: {
     id: 'bull', name: 'BULL', title: 'THE WALL',
     walk: 1.4, lane: 0.9, power: 1.4, jumpV: 6.8,
     specialName: 'SEISMIC SLAM',
-    desc: ['SLOW BUT HUGE', 'HYDRAULIC SLEDGE', 'SHOCKWAVE FINISHER'],
+    desc: ['SLOW BUT HUGE', 'SLAM SHOCKWAVE', 'KNOCKS ALL DOWN'],
     pw: 5, sp: 2, sk: 2,
   },
 };
@@ -58,11 +57,6 @@ export class Player extends Fighter {
   comboHits = 0;
   comboT = 0;
   weapon: { type: ItemKind; uses: number } | null = null;
-
-  /** Innate signature weapon (unbreakable); pickups override it temporarily. */
-  get signature(): HeroWeaponDef {
-    return HERO_WEAPONS[this.charId] ?? HERO_WEAPONS.kane;
-  }
 
   private keys: Record<string, Phaser.Input.Keyboard.Key> = {};
   private prev = { attack: false, jump: false, special: false };
@@ -191,7 +185,7 @@ export class Player extends Fighter {
       case 'attack': {
         // combo chaining: buffer next attack press, chain at/after the hit key
         if (p.attackPr) this.comboQueued = true;
-        if (this.comboQueued && !this.airborne && this.atkIdx >= 2 && this.atkIdx < this.atkSeq.length && this.comboStage > 0 && this.comboStage < this.signature.combo.length) {
+        if (this.comboQueued && !this.airborne && this.atkIdx >= 2 && this.atkIdx < this.atkSeq.length && this.comboStage > 0 && this.comboStage < 3) {
           this.comboQueued = false;
           this.nextComboStage();
         }
@@ -225,31 +219,36 @@ export class Player extends Fighter {
     }
   }
 
-  /** Begin the signature-weapon combo (called via event after GameScene checks grabs/items). */
+  /** Begin the ground combo (called via event after GameScene checks grabs/items). */
   beginCombo(): void {
     this.comboStage = 1;
     this.comboQueued = false;
-    this.startAttack(this.heroSwingSeq(0));
+    const dmg = Math.round(6 * this.stats.power);
+    this.startAttack([
+      { frame: 'jabWindup', dur: 4, move: 0.4 },
+      { frame: 'jab', dur: 5, move: 1.3, hit: { reach: 30, width: 26, dmg } },
+      { frame: 'jabRecover', dur: 6 },
+    ]);
     this.scene.events.emit('sfx', 'swing');
   }
 
-  /** Build the 3-key attack sequence for one stage of the signature combo. */
-  private heroSwingSeq(stageIdx: number): AttackKey[] {
-    const s = this.signature.combo[stageIdx];
-    const pw = this.stats.power;
-    return [
-      { frame: s.frames[0], dur: s.windup, move: 0.3 },
-      { frame: s.frames[1], dur: s.swing, move: s.move, hit: {
-        reach: s.reach, width: s.width, dmg: Math.round(s.dmg * pw),
-        heavy: s.heavy, launch: s.launch, stun: s.stun, shockwave: s.shockwave, slash: s.slash,
-      } },
-      { frame: s.frames[2], dur: s.recover },
-    ];
-  }
-
   private nextComboStage(): void {
-    this.comboStage++;
-    this.startAttack(this.heroSwingSeq(this.comboStage - 1));
+    const pw = this.stats.power;
+    if (this.comboStage === 1) {
+      this.comboStage = 2;
+      this.startAttack([
+        { frame: 'crossWindup', dur: 4, move: 0.3 },
+        { frame: 'cross', dur: 5, move: 1.7, hit: { reach: 32, width: 26, dmg: Math.round(7 * pw) } },
+        { frame: 'crossRecover', dur: 7 },
+      ]);
+    } else {
+      this.comboStage = 3;
+      this.startAttack([
+        { frame: 'uppercutWindup', dur: 6, move: 0.4 },
+        { frame: 'uppercut', dur: 7, move: 1.9, hit: { reach: 30, width: 26, dmg: Math.round(12 * pw), launch: true, heavy: true, z1: 76 } },
+        { frame: 'uppercutRecover', dur: 9 },
+      ]);
+    }
     this.scene.events.emit('sfx', 'swing');
   }
 
@@ -263,7 +262,10 @@ export class Player extends Fighter {
     this.comboStage = 0;
     this.startAttack([
       { frame: 'swingWindup', dur: def.windup, move: 0.3 },
-      { frame: 'swing', dur: def.swing, move: 1.4, hit: { reach: def.reach, width: def.width, dmg, heavy: def.heavy, launch: def.launch } },
+      { frame: 'swing', dur: def.swing, move: def.move ?? 1.4, hit: {
+        reach: def.reach, width: def.width, dmg, heavy: def.heavy, launch: def.launch,
+        stun: def.stun, shockwave: def.shockwave, slash: def.slash,
+      } },
       { frame: 'swingRecover', dur: def.recover },
     ]);
     this.scene.events.emit('sfx', 'swing');
@@ -361,37 +363,32 @@ export class Player extends Fighter {
   }
 
   /** Update the attached weapon sprite (called each tick by GameScene).
-   *  Renders the pickup weapon while one is held, otherwise the hero's
-   *  signature weapon with its own grip, carry and swing geometry. */
+   *  Carry: held close at the side, tip up — never jutting from the hip.
+   *  Swing: extended along the striking arm. Per-weapon geometry comes
+   *  from WEAPON_DEFS; defaults fit the stick/blade weapons. */
   syncWeaponSprite(): void {
-    const sig = this.signature;
-    const texture = this.weapon ? `item_${this.weapon.type}` : sig.texture;
-    if (!this.weaponImg || this.weaponImg.texture.key !== texture) {
-      this.weaponImg?.destroy();
-      this.weaponImg = this.scene.add.image(this.fx, this.fy, texture);
-      this.weaponImg.setScale(2);
-    }
-    const swinging = (this.state === 'attack' || this.state === 'special') && this.atkIdx > 0;
-    let hx: number, hy: number, angle: number, grip = 0.2, alpha = 1;
     if (this.weapon) {
-      hx = this.fx + this.facing * (swinging ? 30 : 12);
-      hy = this.fy - this.fz - (swinging ? 40 : 34);
-      angle = this.facing > 0 ? (swinging ? 12 : 70) : (swinging ? 168 : 110);
+      const def = WEAPON_DEFS[this.weapon.type];
+      const texture = `item_${this.weapon.type}`;
+      if (!this.weaponImg || this.weaponImg.texture.key !== texture) {
+        this.weaponImg?.destroy();
+        this.weaponImg = this.scene.add.image(this.fx, this.fy, texture);
+        this.weaponImg.setScale(2);
+      }
+      const swinging = (this.state === 'attack' || this.state === 'special') && this.atkIdx > 0;
+      const hx = this.fx + this.facing * (swinging ? (def?.swingX ?? 30) : (def?.idleX ?? 9));
+      const hy = this.fy - this.fz - (swinging ? (def?.swingY ?? 40) : (def?.idleY ?? 32));
+      const a = swinging ? (def?.swingAngle ?? 12) : (def?.idleAngle ?? -80);
+      this.weaponImg.setOrigin(def?.grip ?? 0.2, 0.5);
+      this.weaponImg.setPosition(hx, hy);
+      this.weaponImg.setAngle(this.facing > 0 ? a : 180 - a);
+      this.weaponImg.setFlipX(this.facing < 0);
+      this.weaponImg.setDepth(this.fy + 1);
+      this.weaponImg.setVisible(!this.dead);
       // blink when one swing remains so low durability reads at a glance
-      alpha = this.weapon.uses <= 1 && (this.scene.time.now >> 5) % 2 === 0 ? 0.35 : 1;
-    } else {
-      hx = this.fx + this.facing * (swinging ? sig.swingX : sig.idleX);
-      hy = this.fy - this.fz - (swinging ? sig.swingY : sig.idleY);
-      const a = swinging ? sig.swingAngle : sig.idleAngle;
-      angle = this.facing > 0 ? a : 180 - a;
-      grip = sig.grip;
+      this.weaponImg.setAlpha(this.weapon.uses <= 1 && (this.scene.time.now >> 5) % 2 === 0 ? 0.35 : 1);
+    } else if (this.weaponImg) {
+      this.weaponImg.setVisible(false);
     }
-    this.weaponImg.setOrigin(grip, 0.5);
-    this.weaponImg.setPosition(hx, hy);
-    this.weaponImg.setAngle(angle);
-    this.weaponImg.setFlipX(this.facing < 0);
-    this.weaponImg.setDepth(this.fy + 1);
-    this.weaponImg.setVisible(!this.dead);
-    this.weaponImg.setAlpha(alpha);
   }
 }

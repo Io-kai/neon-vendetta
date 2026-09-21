@@ -128,10 +128,10 @@ try {
   await sleep(150);await page.screenshot({path:out+`premium-weapon-${wname}-swing.png`});
  }
 
- // ---- hero signature weapons: art, carry pose, finisher effects ----
- const wpnPx=await page.evaluate(()=>{
+ // ---- power-up weapons: baton / mono-edge / sledge pickups ----
+ const itemPx=await page.evaluate(()=>{
   const t=window.__NV_GAME__.textures;const out={};
-  for(const key of ['wpn_baton','wpn_monoedge','wpn_sledge']){
+  for(const key of ['item_baton','item_monoedge','item_sledge']){
    if(!t.exists(key)){out[key]=0;continue;}
    const img=t.get(key).getSourceImage();const c=img.getContext('2d');
    const d=c.getImageData(0,0,img.width,img.height).data;let n=0;
@@ -139,67 +139,88 @@ try {
    out[key]=n;
   }return out;
  });
- check(wpnPx.wpn_baton>30,`baton texture has painted pixels (${wpnPx.wpn_baton})`);
- check(wpnPx.wpn_monoedge>30,`mono-edge texture has painted pixels (${wpnPx.wpn_monoedge})`);
- check(wpnPx.wpn_sledge>40,`sledge texture has painted pixels (${wpnPx.wpn_sledge})`);
+ check(itemPx.item_baton>30,`baton texture has painted pixels (${itemPx.item_baton})`);
+ check(itemPx.item_monoedge>30,`mono-edge texture has painted pixels (${itemPx.item_monoedge})`);
+ check(itemPx.item_sledge>40,`sledge texture has painted pixels (${itemPx.item_sledge})`);
 
- for(const [hero,wtex,trait] of [['kane','wpn_baton','stun'],['jinx','wpn_monoedge','slash'],['bull','wpn_sledge','shockwave']]) {
-  await page.evaluate(h=>{window.__NV_GAME__.scene.getScene('GameScene').scene.restart({stageIndex:1,players:1,chars:[h]});},hero);
-  await page.waitForFunction(h=>{
+ for(const [wname,stageIdx,camX,fxWait] of [['baton',0,2140,220],['monoedge',1,1660,null],['sledge',2,2320,480]]) {
+  await page.evaluate(idx=>{window.__NV_GAME__.scene.getScene('GameScene').scene.restart({stageIndex:idx,players:1});},stageIdx);
+  await page.waitForFunction(k=>{
    const s=window.__NV_GAME__.scene.getScene('GameScene');
-   return window.__NV_GAME__.scene.isActive('GameScene')&&s.players?.length===1&&s.players[0].charId===h;
-  },{},hero);
+   return window.__NV_GAME__.scene.isActive('GameScene')&&s.players?.length===1&&s.items?.some(i=>i.def.kind===k);
+  },{},wname);
   await sleep(400);await press('Escape');
   await page.waitForFunction(()=>!window.__NV_GAME__.scene.getScene('GameScene').storyUi.active);
   await sleep(2500); // let the stage card finish
-  // carry pose, weapon in hand — stay left of the first gate so no waves spawn
-  const carried=await page.evaluate(t=>{
+  // ground placement shot
+  await page.evaluate((k,cx)=>{
    const s=window.__NV_GAME__.scene.getScene('GameScene');
    s.paused=true;s.introT=0;
    s.hud.msgImg?.destroy();s.hud.msgImg=null;
-   s.camX=0;
+   const it=s.items.find(i=>i.def.kind===k&&!i.taken);
+   s.camX=cx;
    const p=s.players[0];
-   p.minX=0;p.maxX=480;p.fx=240;p.fy=212;p.fz=0;p.vz=0;p.vx=0;p.vy=0;
-   p.setState('idle');p.step();p.syncWeaponSprite();
-   return p.weaponImg?.visible===true&&p.weaponImg?.texture?.key===t;
-  },wtex);
-  check(carried,`${hero} carries signature weapon (${wtex})`);
-  await sleep(150);await page.screenshot({path:out+`premium-hero-${hero}-idle.png`});
-  // live finisher: passive punk crowd ahead, deterministic combo drive
-  const maxStage={kane:3,jinx:3,bull:2}[hero];
-  await page.evaluate(()=>{
+   p.minX=cx;p.maxX=cx+480;
+   p.fx=it.fx-36;p.fy=it.fy;p.fz=0;p.vz=0;p.vx=0;p.vy=0;
+   p.setState('idle');p.step();it.step();
+  },wname,camX);
+  await sleep(200);await page.screenshot({path:out+`premium-powerup-${wname}-ground.png`});
+  // pick it up via the real attack-pickup path
+  const picked=await page.evaluate(k=>{
    const s=window.__NV_GAME__.scene.getScene('GameScene');
    const p=s.players[0];
-   const n=p.charId==='bull'?3:p.charId==='jinx'?2:1;
-   for(let i=0;i<n;i++){
-    s.spawnEnemy('punk','right');
-    const e=s.enemies.at(-1);
-    e.fx=p.fx+40+i*24;e.fy=p.fy+(i%2?8:-6);e.fz=0;e.vz=0;e.vx=0;e.vy=0;
-    e.cooldown=9999;e.setState('idle');e.step();
-   }
-   s.paused=false;
-   s.onGroundAttack(p); // beginCombo stage 1
-  });
-  for(let st=1;st<maxStage;st++){
-   await page.evaluate(()=>{
-    const p=window.__NV_GAME__.scene.getScene('GameScene').players[0];
-    p.control({left:false,right:false,up:false,down:false,attack:true,jump:false,special:false,attackPr:true,jumpPr:false,specialPr:false},{minX:p.minX,maxX:p.maxX});
+   const it=s.items.find(i=>i.def.kind===k&&!i.taken);
+   if(!it)return null;
+   p.fx=it.fx;p.fy=it.fy;p.setState('idle');
+   s.paused=false;s.introT=0;
+   s.onGroundAttack(p);
+   s.paused=true;
+   p.step();p.syncWeaponSprite();
+   return p.weapon?.type??null;
+  },wname);
+  check(picked===wname,`${wname} pickup equips the ${wname}`);
+  await sleep(150);await page.screenshot({path:out+`premium-powerup-${wname}-held.png`});
+  if(fxWait===null){
+   // mono-edge: manual step into the active slash pose
+   const swung=await page.evaluate(()=>{
+    const s=window.__NV_GAME__.scene.getScene('GameScene');
+    const p=s.players[0];
+    if(!p.weapon)return false;
+    const ok=p.swingWeapon();
+    for(let i=0;i<6;i++){p.step();p.syncWeaponSprite();}
+    return ok;
    });
-   await page.waitForFunction(exp=>window.__NV_GAME__.scene.getScene('GameScene').players[0].comboStage===exp,{},st+1);
+   check(swung,'mono-edge swing activates');
+   await sleep(150);await page.screenshot({path:out+`premium-powerup-monoedge-swing.png`});
+  } else {
+   // baton/sledge: live swing into a passive punk crowd to catch the FX
+   const trait=wname==='baton'?'stun':'shockwave';
+   await page.evaluate(()=>{
+    const s=window.__NV_GAME__.scene.getScene('GameScene');
+    const p=s.players[0];
+    for(let i=0;i<2;i++){
+     s.spawnEnemy('punk','right');
+     const e=s.enemies.at(-1);
+     e.fx=p.fx+38+i*26;e.fy=p.fy+(i%2?8:-6);e.fz=0;e.vz=0;e.vx=0;e.vy=0;
+     e.cooldown=9999;e.setState('idle');e.step();
+    }
+    s.paused=false;
+    s.onGroundAttack(p); // swings the held weapon
+   });
+   let live=false;
+   for(let i=0;i<70;i++){
+    live=await page.evaluate(tr=>{
+     const p=window.__NV_GAME__.scene.getScene('GameScene').players[0];
+     const k=p.atkSeq[p.atkIdx];
+     return !!(k?.hit&&k.hit[tr]);
+    },trait);
+    if(live)break;
+    await sleep(60);
+   }
+   check(live,`${wname} swing goes live (${trait})`);
+   await sleep(fxWait);
+   await page.screenshot({path:out+`premium-powerup-${wname}-fx.png`});
   }
-  let live=false;
-  for(let i=0;i<70;i++){
-   live=await page.evaluate(tr=>{
-    const p=window.__NV_GAME__.scene.getScene('GameScene').players[0];
-    const k=p.atkSeq[p.atkIdx];
-    return !!(k?.hit&&k.hit[tr]);
-   },trait);
-   if(live)break;
-   await sleep(60);
-  }
-  check(live,`${hero} finisher goes live (${trait})`);
-  await sleep(trait==='stun'?120:trait==='slash'?40:200);
-  await page.screenshot({path:out+`premium-hero-${hero}-finisher.png`});
  }
 
  check(errors.length===0,'no runtime exceptions: '+errors.join('; '));

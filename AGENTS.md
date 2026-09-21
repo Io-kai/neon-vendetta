@@ -18,24 +18,28 @@ Vite), inspired by Paprium / Streets of Rage. Not affiliated with Paprium.
   reassign it in the Vercel dashboard (needs project access).
 - History was rewritten once (2026-09-21) to purge a 277MB committed
   puppeteer Chrome (`.cache/`) from the baseline; do not commit `.cache/`.
-- Latest work: **hero signature weapons** — each hero fights with an
-  innate, unbreakable weapon (src/actors/heroWeapons.ts):
-  - Kane "STREETLIGHT" stun baton: 3-hit combo, arc finisher **stuns**
-    survivors upright 50 ticks (`HitSpec.stun`), electric crackle motes.
-  - Jinx "YELLOWLINE" mono-edge: fastest chain with forward drift,
-    dash-slash finisher launches (`HitSpec.slash` crescent arc FX).
-  - Bull "FOUNDATION" hydraulic sledge: 2-hit combo, crusher detonates a
-    radial **shockwave** (`HitSpec.shockwave`, GameScene.shockwave()).
-  - Art: `WPN_MAPS` in src/art/parts.ts baked as `wpn_<id>` textures;
-    palette gains c/e/s. `Player.syncWeaponSprite()` renders pickups OR
-    the signature (per-weapon grip/carry/swing geometry). Pickups still
-    override the signature until they break.
+- Latest work: **power-up weapons + natural carry pose** — heroes fight
+  bare-handed (jab/cross/uppercut fist combo); ALL weapons are pickups.
+  The pickup arsenal (WEAPON_DEFS in src/actors/Item.ts) now includes
+  three rare power-ups with from-scratch art (ITEM_MAPS in
+  src/art/parts.ts) and unique hit effects (HitSpec fields):
+  - "STREETLIGHT" stun baton: hits **stun** survivors upright 35 ticks
+    (`stun`), electric crackle motes. Stage 1 + 4.
+  - "YELLOWLINE" mono-edge: dash-through **launching** slashes with a
+    crescent arc FX (`slash`, move 2.6). Stage 2 + 4.
+  - "FOUNDATION" hydraulic sledge: impact detonates a radial ground
+    **shockwave** (`shockwave`, GameScene.shockwave()). Stage 3.
+  - WEAPON_DEFS also carries per-weapon held-sprite geometry (grip,
+    idle/swing offsets + angles); `Player.syncWeaponSprite()` carries
+    tip-UP at the side (idleAngle ≈ -80°) — a 2026-09-21 iteration put
+    the weapon at 70° from the hip, which read terribly. Sledge rests
+    head-down (68°). Palette gains c/e/s; WEAPON_GLOW tints pickup glows.
 - Build: `npm run build` (tsc --noEmit && vite build → dist/). Green.
 - Headless regression: `node scripts/combat-checks.mjs` (16 checks). Green.
-- Other QA scripts in scripts/: visual-qa.mjs (29 checks incl. weapon
-  pickups + hero signature finishers), e2e.mjs, smoke.ts (Puppeteer;
-  use `PUPPETEER_SKIP_DOWNLOAD=true` when installing; puppeteer's pinned
-  Chrome is NOT downloaded — run with
+- Other QA scripts in scripts/: visual-qa.mjs (25 checks incl. all weapon
+  pickups, carry poses and stun/shockwave FX shots), e2e.mjs, smoke.ts
+  (Puppeteer; use `PUPPETEER_SKIP_DOWNLOAD=true` when installing;
+  puppeteer's pinned Chrome is NOT downloaded — run with
   `PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome`).
 
 ## Deploy & launch
